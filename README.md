@@ -17,13 +17,16 @@ Then add a new initalizer with your AWS credentials:
 **config/initializers/s3_direct_upload.rb**
 ```ruby
 S3DirectUpload.config do |c|
-  c.access_key_id = ""       # your access key id
-  c.secret_access_key = ""   # your secret access key
-  c.bucket = ""              # your bucket name
-  c.region = nil             # region prefix of your bucket url. This is _required_ for the non-default AWS region, eg. "s3-eu-west-1"
-  c.url = nil                # S3 API endpoint (optional), eg. "https://#{c.bucket}.s3.amazonaws.com/"
+  c.access_key_id = lambda { "" }       # your access key id
+  c.secret_access_key = lambda { "" }   # your secret access key
+  c.bucket = ""                         # your bucket name
+  c.region = nil                        # region prefix of your bucket url. This is _required_ for the non-default AWS region, eg. "s3-eu-west-1"
+  c.url = nil                           # S3 API endpoint (optional), eg. "https://#{c.bucket}.s3.amazonaws.com/"
 end
 ```
+
+(The access key ID and secret access key are lambdas to allow for
+accessing temporary IAM role credentials on EC2 instances.)
 
 Make sure your AWS S3 CORS settings for your bucket look something like this:
 ```xml
@@ -93,15 +96,15 @@ Optionally, you can also place this template in the same view for the progress b
 
 ### Example with all options
 ```ruby
-<%= s3_uploader_form callback_url: model_url, 
-                     callback_method: "POST", 
-                     callback_param: "model[image_url]", 
-                     key: "files/{timestamp}-{unique_id}-#{SecureRandom.hex}/${filename}", 
-                     key_starts_with: "files/", 
-                     acl: "public-read", 
-                     max_file_size: 50.megabytes, 
-                     id: "s3-uploader", 
-                     class: "upload-form", 
+<%= s3_uploader_form callback_url: model_url,
+                     callback_method: "POST",
+                     callback_param: "model[image_url]",
+                     key: "files/{timestamp}-{unique_id}-#{SecureRandom.hex}/${filename}",
+                     key_starts_with: "files/",
+                     acl: "public-read",
+                     max_file_size: 50.megabytes,
+                     id: "s3-uploader",
+                     class: "upload-form",
                      data: {:key => :val} do %>
   <%= file_field_tag :file, multiple: true %>
 <% end %>

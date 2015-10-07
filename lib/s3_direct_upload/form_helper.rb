@@ -15,6 +15,7 @@ module S3DirectUpload
         @options = options.reverse_merge(
           aws_access_key_id: S3DirectUpload.config.access_key_id,
           aws_secret_access_key: S3DirectUpload.config.secret_access_key,
+          aws_session_token: S3DirectUpload.config.session_token,
           bucket: options[:bucket] || S3DirectUpload.config.bucket,
           region: S3DirectUpload.config.region || "us-east-1",
           url: S3DirectUpload.config.url,
@@ -55,7 +56,7 @@ module S3DirectUpload
       end
 
       def fields
-        {
+        flds = {
           :acl => @options[:acl],
           :key => @options[:key] || key,
           :policy => policy,
@@ -66,6 +67,10 @@ module S3DirectUpload
           'X-Amz-Signature' => signature,
           'X-Requested-With' => 'xhr'
         }
+        if @options[:aws_session_token]
+          flds['X-Amz-Security-Token'] = @options[:aws_session_token]
+        end
+        flds
       end
 
       def key
@@ -81,6 +86,11 @@ module S3DirectUpload
       end
 
       def policy_data
+        if @options[:aws_session_token]
+          token = [{'X-Amz-Security-Token' => @options[:aws_session_token]}]
+        else
+          token = []
+        end
         {
           expiration: @options[:expiration],
           conditions: [
@@ -95,7 +105,7 @@ module S3DirectUpload
             {'X-Amz-Algorithm' => 'AWS4-HMAC-SHA256'},
             {'X-Amz-Credential' => "#{@options[:aws_access_key_id]}/#{@options[:date]}/#{@options[:region]}/s3/aws4_request"},
             {'X-Amz-Date' => @options[:timestamp]}
-          ] + (@options[:conditions] || [])
+          ] + (@options[:conditions] || []) + token
         }
       end
 
